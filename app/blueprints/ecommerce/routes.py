@@ -40,8 +40,33 @@ def add_product(id):
     flash(f'Product added to cart successfully', 'success')
     return redirect(url_for('ecommerce.products'))
 
+###########  new addition  ###############
+@app.route('/products/clear')
+def clear_products():
+
+    [db.session.delete(item) for item in Cart.query.filter_by(user_id=current_user.id).all()]
+    db.session.commit()
+        
+    flash(f'All items removed from cart successfully', 'success')
+    return redirect(url_for('ecommerce.products'))
+
+########### end new addition ############
+
+###########  new addition  ###############
+@app.route('/products/remove/<id>')
+def remove_product(id):
+    cart_item = Cart.query.filter_by(product_id=str(id)).filter_by(user_id=current_user.id).first()
+
+    db.session.delete(cart_item)
+    db.session.commit()
+    flash(f'Product removed from cart successfully', 'success')
+    return redirect(url_for('ecommerce.cart'))
+
+########### end new addition ############
+
 @app.route('/products/cart')
 def cart():
+    
     cart_items = []
     for item in Cart.query.filter_by(user_id=current_user.id).all():
         stripe_product = stripe.Product.retrieve(item.product_id)
@@ -54,7 +79,15 @@ def cart():
     context = {
         'cart': cart_items
     }
-    return render_template('ecommerce/cart.html', **context)
+#########  new addition  #########    
+    empt = []
+    for i in range(len(cart_items)):
+        empt.append(cart_items[i]['price']*cart_items[i]['quantity'])
+    total = round(sum(empt),2)
+######### end new addition ########    
+    return render_template('ecommerce/cart.html', value = total, **context)
+
+
 
 @app.route('/products/checkout', methods=['POST'])
 def checkout():
